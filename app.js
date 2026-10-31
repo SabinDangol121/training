@@ -1,10 +1,12 @@
 const state = {
   plan: {},
-  logs: [],        // newest first
+  logs: [],            // newest first
   day: "1",
   view: "today",
-  open: new Set(),  // finished exercises the person has expanded
-  extra: new Set(), // finished exercises where an extra set is being entered
+  open: new Set(),      // finished exercises the person has expanded
+  extra: new Set(),     // finished exercises where an extra set is being entered
+  openDates: new Set(), // History folders that are open
+  dirty: false,         // a set was edited, so Today needs a refresh
 };
 
 // Which weekday each plan day is trained on (0 = Sunday ... 6 = Saturday)
@@ -266,11 +268,11 @@ function renderCard(item) {
 
   const list = el("div", { className: "sets" });
   let run = 0;
-  logs.forEach((log, index) => {
+  for (const log of logs) {
     const first = run + 1;
     run += setsOf(log);
-    list.append(buildSaved(item, log, first, run, index === logs.length - 1, card));
-  });
+    list.append(buildSaved(item, log, first, run, card));
+  }
 
   // The input row shows while sets remain, or when an extra set was requested
   if (!complete || state.extra.has(ex.id)) {
@@ -310,31 +312,95 @@ function renderCard(item) {
   return card;
 }
 
-function buildSaved(item, log, first, last, isLast, card) {
+// A saved set on the Today tab, with an Edit button
+function buildSaved(item, log, first, last, card) {
   const label = first === last ? `Set ${first}` : `Sets ${first}-${last}`;
+  const editBtn = el("button", { type: "button", className: "link", textContent: "Edit" });
   const row = el(
     "div",
     { className: "set saved" },
     el("span", { className: "set-name", textContent: label }),
-    el("span", { className: "set-text", textContent: setLabel(log) })
+    el("span", { className: "set-text", textContent: setLabel(log) }),
+    editBtn
   );
 
-  if (isLast) {
-    const undo = el("button", { type: "button", className: "link", textContent: "Undo" });
-    undo.addEventListener("click", () => {
-      try {
-        deleteLog(log.id);
-        state.logs = state.logs.filter((l) => l.id !== log.id);
-        hideRest();
+  editBtn.addEventListener("click", () => {
+    row.replaceWith(
+      buildEditor(log, label, () => {
         card.replaceWith(renderCard(item));
         renderHeader();
-      } catch {
-        undo.textContent = "Retry undo";
-      }
-    });
-    row.append(undo);
-  }
+      })
+    );
+  });
   return row;
+}
+
+// Form for correcting or deleting a saved set (used on Today and in History)
+function buildEditor(log, label, onClose) {
+  const mode = modeFor(log.exercise.name);
+  const inputs = el("div", { className: "inputs" });
+  if (mode === "reps") {
+    inputs.append(
+      field("Reps", "reps", "", "1", log.reps ?? ""),
+      field("Weight (kg)", "weight_kg", "kg", "0.5", log.weight_kg ?? "")
+    );
+  } else if (mode === "time") {
+    inputs.append(field("Seconds", "duration_seconds", "", "1", log.duration_seconds ?? ""));
+  } else {
+    inputs.append(
+      field("Distance (m)", "distance_m", "", "1", log.distance_m ?? ""),
+      field("Weight (kg)", "weight_kg", "kg", "0.5", log.weight_kg ?? "")
+    );
+  }
+
+  const saveBtn = el("button", { type: "button", className: "save", textContent: "Save changes" });
+  const cancelBtn = el("button", { type: "button", className: "link", textContent: "Cancel" });
+  const deleteBtn = el("button", { type: "button", className: "link danger", textContent: "Delete set" });
+  const error = el("p", { className: "error" });
+  error.setAttribute("role", "alert");
+
+  cancelBtn.addEventListener("click", onClose);
+
+  saveBtn.addEventListener("click", () => {
+    const changes = {};
+    for (const input of inputs.querySelectorAll("input")) {
+      changes[input.name] = toNumber(input.value);
+    }
+    if (Object.values(changes).every((v) => v == null)) {
+      error.textContent = "Enter at least one value, or delete the set.";
+      return;
+    }
+    try {
+      updateLog(log.id, changes);
+      state.logs = getLogs();
+      state.dirty = true;
+      onClose();
+    } catch (err) {
+      error.textContent = `Could not save: ${err.message}`;
+    }
+  });
+
+  deleteBtn.addEventListener("click", () => {
+    if (!confirm(`Delete ${label.toLowerCase()} of ${log.exercise.name}?`)) return;
+    try {
+      deleteLog(log.id);
+      state.logs = getLogs();
+      state.dirty = true;
+      hideRest();
+      onClose();
+    } catch (err) {
+      error.textContent = `Could not delete: ${err.message}`;
+    }
+  });
+
+  return el(
+    "div",
+    { className: "set editing" },
+    el("p", { className: "set-title", textContent: `Editing ${label.toLowerCase()}` }),
+    inputs,
+    el("div", { className: "editor-actions" }, saveBtn, cancelBtn, deleteBtn),
+    error
+  );
 }
 
 function buildActive(item, logs, done, complete, card) {
@@ -595,8 +661,7 @@ function buildBackupBar() {
     try {
       const count = importBackup(await file.text());
       state.logs = getLogs();
-      renderToday();
-      renderHeader();
+      state.dirty = true;
       renderHistory();
       document.querySelector("#view-history .week-note").textContent = `Imported ${plural(count, "set")}.`;
     } catch (err) {
@@ -605,6 +670,23 @@ function buildBackupBar() {
   });
 
   return el("div", { className: "backup-bar" }, exportBtn, importBtn, fileInput, note);
+}
+
+// A saved set in History, with an Edit button
+function buildHistorySet(log, first, last) {
+  const label = first === last ? `Set ${first}` : `Sets ${first}-${last}`;
+  const editBtn = el("button", { type: "button", className: "link", textContent: "Edit" });
+  const row = el(
+    "div",
+    { className: "set saved" },
+    el("span", { className: "set-name", textContent: label }),
+    el("span", { className: "set-text", textContent: setLabel(log) }),
+    editBtn
+  );
+  editBtn.addEventListener("click", () => {
+    row.replaceWith(buildEditor(log, label, () => renderHistory()));
+  });
+  return row;
 }
 
 function renderHistory() {
@@ -632,19 +714,26 @@ function renderHistory() {
   }
 
   for (const [date, exercises] of byDate) {
-    const group = el("div", { className: "sheet" });
+    // Exercises in the order they were trained
+    const groups = [...exercises.values()]
+      .map((logs) => [...logs].sort((a, b) => a.id - b.id))
+      .sort((a, b) => a[0].id - b[0].id);
+
+    const sheet = el("div", { className: "sheet" });
     let totalSets = 0;
-    for (const logs of exercises.values()) {
-      const ordered = [...logs].sort((a, b) => a.id - b.id);
+    for (const ordered of groups) {
       const ex = ordered[0].exercise;
       totalSets += ordered.reduce((sum, l) => sum + setsOf(l), 0);
-      group.append(
-        el(
-          "article",
-          { className: `row cat-${ex.category}` },
-          el("h3", { textContent: ex.name }),
-          el("p", { className: "cat", textContent: ordered.map(setLabel).join("  ·  ") })
-        )
+
+      const list = el("div", { className: "sets" });
+      let run = 0;
+      for (const log of ordered) {
+        const first = run + 1;
+        run += setsOf(log);
+        list.append(buildHistorySet(log, first, run));
+      }
+      sheet.append(
+        el("article", { className: `row cat-${ex.category}` }, el("h3", { textContent: ex.name }), list)
       );
     }
 
@@ -654,10 +743,16 @@ function renderHistory() {
       el("span", { className: "folder-name", textContent: prettyDate(date) }),
       el("span", {
         className: "folder-meta",
-        textContent: `${plural(exercises.size, "exercise")} · ${plural(totalSets, "set")}`,
+        textContent: `${plural(groups.length, "exercise")} · ${plural(totalSets, "set")}`,
       })
     );
-    box.append(el("details", { className: "folder" }, summary, group));
+    const folder = el("details", { className: "folder" }, summary, sheet);
+    folder.open = state.openDates.has(date);
+    folder.addEventListener("toggle", () => {
+      if (folder.open) state.openDates.add(date);
+      else state.openDates.delete(date);
+    });
+    box.append(folder);
   }
 }
 
@@ -673,6 +768,10 @@ function setView(view) {
       if (name === view) btn.setAttribute("aria-current", "page");
       else btn.removeAttribute("aria-current");
     }
+  }
+  if (view === "today" && state.dirty) {
+    renderToday();
+    state.dirty = false;
   }
   if (view === "history") renderHistory();
   if (view === "week" && typeof renderWeek === "function") renderWeek();

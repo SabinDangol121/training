@@ -505,3 +505,14 @@ main { max-width: 640px; margin: 0 auto; }
 }
 
 .backup-bar .week-note { flex-basis: 100%; margin: 0; padding: 0 8px; }
+
+/* ---------- editing a saved set ---------- */
+
+.set.editing { border-top: 2px solid var(--cat, var(--mat)); }
+.set.editing .inputs { margin-top: 0; }
+
+.editor-actions { display: flex; align-items: center; gap: 4px; margin-top: 10px; }
+.editor-actions .save { flex: 1; width: auto; margin-top: 0; }
+
+.link.danger { color: var(--power); }
+:root[data-theme="dark"] .link.danger { color: #FF8A80; }

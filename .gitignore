@@ -1,0 +1,5 @@
+*.db
+backup*.json
+training-backup-*.json
+export_logs.py
+__pycache__/

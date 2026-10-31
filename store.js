@@ -177,3 +177,22 @@ function backupStatus() {
   if (days >= 7) return `Last backup: ${days} days ago. Export a new one.`;
   return `Last backup: ${days} ${days === 1 ? "day" : "days"} ago.`;
 }
+
+function updateLog(id, changes) {
+  const index = db.logs.findIndex((l) => l.id === id);
+  if (index === -1) throw new Error("That set no longer exists.");
+  const previous = db.logs[index];
+  const updated = { ...previous };
+  if ("reps" in changes) updated.reps = numberOrNull(changes.reps, 1000);
+  if ("weight_kg" in changes) updated.weight_kg = numberOrNull(changes.weight_kg, 1000);
+  if ("duration_seconds" in changes) updated.duration_seconds = numberOrNull(changes.duration_seconds, 36000);
+  if ("distance_m" in changes) updated.distance_m = numberOrNull(changes.distance_m, 100000);
+  db.logs[index] = updated;
+  try {
+    saveDb();
+  } catch {
+    db.logs[index] = previous;
+    throw new Error("This browser would not save the change.");
+  }
+  return updated;
+}

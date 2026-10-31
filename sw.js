@@ -1,4 +1,4 @@
-const CACHE = "tt-v1";
+const CACHE = "tt-v2";
 const ASSETS = [
   "./", "index.html", "style.css", "plan.js", "store.js",
   "app.js", "week.js", "manifest.webmanifest", "icon.svg",
