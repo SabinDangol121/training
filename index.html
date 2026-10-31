@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1E4FA3">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Training">
+  <title>Training Tracker</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+
+  <!-- Shows any JavaScript error as a red bar. Delete once everything works. -->
+  <script>
+    window.addEventListener("error", function (e) {
+      var box = document.createElement("pre");
+      box.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:99;margin:0;padding:8px;background:#b3382c;color:#fff;font:12px monospace;white-space:pre-wrap";
+      box.textContent = e.message + " (" + String(e.filename || "").split("/").pop() + ":" + e.lineno + ")";
+      (document.body || document.documentElement).appendChild(box);
+    });
+  </script>
+
+  <!-- Applies the saved or system theme before the page paints -->
+  <script>
+    (function () {
+      var theme = null;
+      try { theme = localStorage.getItem("tt-theme"); } catch (e) {}
+      if (!theme) theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="title-row">
+        <h1 id="day-title">Today</h1>
+        <div class="title-meta">
+          <span id="today-date" class="date"></span>
+          <button type="button" id="theme-toggle" class="theme-btn"></button>
+        </div>
+      </div>
+      <div class="belt" id="belt" role="img" aria-label="Session progress"></div>
+      <p id="progress" class="progress"></p>
+      <nav class="days" id="days" aria-label="Workout day"></nav>
+    </div>
+  </header>
+
+  <main>
+    <section id="view-today">
+      <div id="sheet" class="sheet"></div>
+    </section>
+    <section id="view-history" hidden></section>
+    <section id="view-week" hidden></section>
+  </main>
+
+  <div id="rest" class="rest" hidden>
+    <span class="rest-label" id="rest-label">Rest</span>
+    <span class="rest-time" id="rest-time">0:00</span>
+    <button type="button" id="rest-add">+30 s</button>
+    <button type="button" id="rest-skip">Skip</button>
+  </div>
+
+  <nav class="tabs" aria-label="Main">
+    <button type="button" id="tab-today" aria-current="page">Today</button>
+    <button type="button" id="tab-history">History</button>
+    <button type="button" id="tab-week">Week</button>
+  </nav>
+
+  <script src="plan.js"></script>
+  <script src="store.js"></script>
+  <script src="app.js"></script>
+  <script src="week.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw.js").catch(function () {});
+      });
+    }
+  </script>
+</body>
+</html>
