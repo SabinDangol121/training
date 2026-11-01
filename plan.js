@@ -4,7 +4,7 @@
 const PLAN = {
   "1": [
     ["Conventional deadlift", "power", "posterior chain", 3, "5"],
-    ["Leg press", "power", "legs", 3, "10"],
+    ["Squat", "power", "legs", 3, "10"],
     ["Bulgarian split squat", "power", "legs", 2, "8 per leg"],
     ["Leg curl", "accessory", "hamstrings", 3, "12"],
     ["Standing calf raises", "accessory", "calves", 3, "15"],
