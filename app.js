@@ -11,7 +11,7 @@ const state = {
 
 // Which weekday each plan day is trained on (0 = Sunday ... 6 = Saturday)
 const SCHEDULE = [
-  { day: "1", name: "Sunday", weekday: 0 },
+  { day: "1", name: "Monday", weekday: 1 },
   { day: "2", name: "Tuesday", weekday: 2 },
   { day: "3", name: "Wednesday", weekday: 3 },
 ];
@@ -78,13 +78,23 @@ function suggestedDay() {
 // Which fields an exercise needs
 function modeFor(name) {
   const n = name.toLowerCase();
-  if (n.includes("hang")) return "time";
+  if (n.includes("hang") || n.includes("plank") || n.includes("bike")) return "time";
   if (n.includes("carry") || n.includes("sled")) return "distance";
   return "reps";
 }
 
+// Cardio is entered in minutes; other timed exercises in seconds
+function usesMinutes(name) {
+  return name.toLowerCase().includes("bike");
+}
+
 function toNumber(value) {
   return value === "" ? null : Number(value);
+}
+
+function durationText(seconds) {
+  if (seconds >= 120) return `${Math.round((seconds / 60) * 10) / 10} min`;
+  return `${seconds} s`;
 }
 
 // Older entries may hold several sets in one record
@@ -97,7 +107,7 @@ function setLabel(log) {
   if (log.reps != null && log.weight_kg != null) parts.push(`${log.weight_kg} kg × ${log.reps}`);
   else if (log.reps != null) parts.push(`${log.reps} reps`);
   else if (log.weight_kg != null) parts.push(`${log.weight_kg} kg`);
-  if (log.duration_seconds != null) parts.push(`${log.duration_seconds} s`);
+  if (log.duration_seconds != null) parts.push(durationText(log.duration_seconds));
   if (log.distance_m != null) parts.push(`${log.distance_m} m`);
   const text = parts.join(", ");
   return setsOf(log) > 1 ? `${setsOf(log)} sets: ${text}` : text;
@@ -337,7 +347,8 @@ function buildSaved(item, log, first, last, card) {
 
 // Form for correcting or deleting a saved set (used on Today and in History)
 function buildEditor(log, label, onClose) {
-  const mode = modeFor(log.exercise.name);
+  const name = log.exercise.name;
+  const mode = modeFor(name);
   const inputs = el("div", { className: "inputs" });
   if (mode === "reps") {
     inputs.append(
@@ -345,7 +356,13 @@ function buildEditor(log, label, onClose) {
       field("Weight (kg)", "weight_kg", "kg", "0.5", log.weight_kg ?? "")
     );
   } else if (mode === "time") {
-    inputs.append(field("Seconds", "duration_seconds", "", "1", log.duration_seconds ?? ""));
+    if (usesMinutes(name)) {
+      inputs.append(
+        field("Minutes", "minutes", "", "1", log.duration_seconds != null ? log.duration_seconds / 60 : "")
+      );
+    } else {
+      inputs.append(field("Seconds", "duration_seconds", "", "1", log.duration_seconds ?? ""));
+    }
   } else {
     inputs.append(
       field("Distance (m)", "distance_m", "", "1", log.distance_m ?? ""),
@@ -366,6 +383,10 @@ function buildEditor(log, label, onClose) {
     for (const input of inputs.querySelectorAll("input")) {
       changes[input.name] = toNumber(input.value);
     }
+    if ("minutes" in changes) {
+      changes.duration_seconds = changes.minutes != null ? Math.round(changes.minutes * 60) : null;
+      delete changes.minutes;
+    }
     if (Object.values(changes).every((v) => v == null)) {
       error.textContent = "Enter at least one value, or delete the set.";
       return;
@@ -381,7 +402,7 @@ function buildEditor(log, label, onClose) {
   });
 
   deleteBtn.addEventListener("click", () => {
-    if (!confirm(`Delete ${label.toLowerCase()} of ${log.exercise.name}?`)) return;
+    if (!confirm(`Delete ${label.toLowerCase()} of ${name}?`)) return;
     try {
       deleteLog(log.id);
       state.logs = getLogs();
@@ -417,7 +438,13 @@ function buildActive(item, logs, done, complete, card) {
       field("Weight (kg)", "weight_kg", "kg", "0.5", weight)
     );
   } else if (mode === "time") {
-    inputs.append(field("Seconds", "duration_seconds", item.reps, "1", prev?.duration_seconds ?? ""));
+    if (usesMinutes(ex.name)) {
+      inputs.append(
+        field("Minutes", "minutes", item.reps, "1", prev?.duration_seconds != null ? prev.duration_seconds / 60 : "")
+      );
+    } else {
+      inputs.append(field("Seconds", "duration_seconds", item.reps, "1", prev?.duration_seconds ?? ""));
+    }
   } else {
     inputs.append(
       field("Distance (m)", "distance_m", "30", "1", prev?.distance_m ?? ""),
@@ -448,6 +475,10 @@ function buildActive(item, logs, done, complete, card) {
     };
     for (const input of inputs.querySelectorAll("input")) {
       body[input.name] = toNumber(input.value);
+    }
+    if ("minutes" in body) {
+      if (body.minutes != null) body.duration_seconds = Math.round(body.minutes * 60);
+      delete body.minutes;
     }
     const hasData = ["reps", "weight_kg", "duration_seconds", "distance_m"].some((k) => body[k] != null);
     if (!hasData) {

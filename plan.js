@@ -1,31 +1,32 @@
 // Your training plan. To change it, edit this file and upload the site again.
-// Day 1 = Sunday (heavy), Day 2 = Tuesday (light), Day 3 = Wednesday (hinge and pull)
+// Day 1 = Monday (lower body), Day 2 = Tuesday (upper body), Day 3 = Wednesday (balance and stability)
 // Each line is: [name, category, muscle group, sets, reps]
 const PLAN = {
   "1": [
-    ["Box jumps", "explosive", "legs", 3, "4"],
-    ["Med ball slams", "explosive", "full body", 3, "6"],
-    ["Back squat", "power", "legs", 3, "3-5"],
-    ["Weighted pull-up", "power", "back", 3, "4-6"],
-    ["Overhead press", "power", "shoulders", 3, "4-6"],
-    ["Bulgarian split squat", "power", "legs", 3, "6-8 per leg"],
-    ["Sled push", "functional", "legs", 3, "20-30 m"],
-    ["Hanging leg raises", "accessory", "core", 3, "8-12"],
+    ["Conventional deadlift", "power", "posterior chain", 3, "5"],
+    ["Leg press", "power", "legs", 3, "10"],
+    ["Bulgarian split squat", "power", "legs", 2, "8 per leg"],
+    ["Leg curl", "accessory", "hamstrings", 3, "12"],
+    ["Standing calf raises", "accessory", "calves", 3, "15"],
+    ["Dead bug", "functional", "core", 3, "10 per side"],
   ],
   "2": [
-    ["Broad jumps", "explosive", "legs", 3, "4"],
-    ["Med ball rotational throw", "explosive", "core", 3, "5 per side"],
-    ["Turkish get-up", "functional", "full body", 3, "3 per side"],
-    ["Sandbag carry", "functional", "full body", 3, "30 m"],
-    ["Landmine rotations", "accessory", "core", 3, "10 per side"],
+    ["Barbell bench press", "power", "chest", 3, "6-8"],
+    ["Chest fly machine", "accessory", "chest", 2, "12"],
+    ["Lat pulldown", "power", "back", 3, "8-12"],
+    ["Single-arm landmine row", "power", "back", 3, "8 per side"],
+    ["Dumbbell bicep curls", "accessory", "biceps", 3, "10-12"],
+    ["Hammer curls", "accessory", "biceps", 2, "10-12"],
+    ["Triceps pushdowns", "accessory", "triceps", 2, "10-12"],
   ],
   "3": [
-    ["Kettlebell swings", "explosive", "hips", 3, "8"],
-    ["Barbell deadlift", "power", "back", 3, "3-5"],
-    ["Barbell row", "power", "back", 3, "5-6"],
-    ["Pallof press", "functional", "core", 3, "10 per side"],
-    ["Face pulls", "accessory", "shoulders", 3, "12-15"],
-    ["Neck work", "accessory", "neck", 3, "15"],
+    ["Single-leg Romanian deadlift", "functional", "hamstrings", 2, "8 per leg"],
+    ["Step-ups", "functional", "legs", 2, "10 per leg"],
+    ["Lateral lunges", "functional", "legs", 2, "8 per side"],
+    ["Glute bridge", "accessory", "glutes", 2, "12"],
+    ["Side plank", "functional", "core", 2, "30 s per side"],
+    ["Bird dog", "functional", "core", 2, "10 per side"],
+    ["Stationary bike (easy)", "functional", "conditioning", 1, "8-12 min"],
   ],
 };
 

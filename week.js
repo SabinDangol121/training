@@ -232,6 +232,7 @@ function renderWeek() {
   for (const category of CATEGORIES) {
     const planned = adh.byCategoryPlanned[category];
     const done = current.byCategory[category];
+    if (planned === 0 && done === 0) continue; 
     const width = planned ? Math.min(100, Math.round((done / planned) * 100)) : done > 0 ? 100 : 0;
     const fill = el("div", { className: "bar-fill" });
     fill.style.width = `${width}%`;
